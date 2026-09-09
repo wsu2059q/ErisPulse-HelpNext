@@ -165,19 +165,20 @@ class Main(BaseModule):
         }
 
     def _all_prefixes(self) -> List[str]:
-        event_config = sdk.config.getConfig("ErisPulse.event", {}) or {}
-        prefix = (event_config.get("command", {}) or {}).get("prefix", "/")
+        # 读取框架命令处理器维护的前缀（随配置热更新，与命令解析保持一致）
+        prefix = command.prefix
         if isinstance(prefix, list):
             return [str(p) for p in prefix] if prefix else ["/"]
-        return [str(prefix)]
+        return [str(prefix)] if prefix else ["/"]
 
-    def _build_command_list(self) -> List[Dict]:
+    def _build_command_list(self, event) -> List[Dict]:
         cfg = self._cfg_view()
         show_hidden = cfg["show_hidden_commands"]
         result: List[Dict] = []
-        names = command.get_commands() if show_hidden else command.get_visible_commands()
+        # 会话感知：按作用域过滤当前会话不可用模块的命令（与框架静默语义一致）
+        names = command.get_commands(event=event) if show_hidden else command.get_visible_commands(event=event)
         for name in names:
-            info = command.get_command(name)
+            info = command.get_command(name, event=event)
             if info and name == info.get("main_name"):
                 result.append({"name": name, "info": info})
         return result
@@ -190,7 +191,7 @@ class Main(BaseModule):
     async def _handle(self, event) -> None:
         try:
             args = event.get_command_args()
-            commands = self._build_command_list()
+            commands = self._build_command_list(event)
             prefixes = self._all_prefixes()
             prefix = prefixes[0] if prefixes else "/"
             cfg = self._cfg_view()

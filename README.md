@@ -4,7 +4,7 @@
   <img src=".github/assets/ErisPulseLogo.png" width="140" alt="ErisPulse" />
 </div>
 
-Renders the ErisPulse `/help` command as a card image via [ErisPulse-Takumi](https://pypi.org/project/ErisPulse-Takumi/), with day/night theme and multilingual support. Requires ErisPulse 2.7.0+.
+Renders the ErisPulse `/help` command as a card image via [ErisPulse-Takumi](https://pypi.org/project/ErisPulse-Takumi/), with day/night theme and multilingual support. Requires ErisPulse 2.8.0+.
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -14,12 +14,13 @@ Renders the ErisPulse `/help` command as a card image via [ErisPulse-Takumi](htt
 
 ## English
 
-> 2.7.0+ recommends this module. The classic [`ErisPulse-HelpModule`](https://pypi.org/project/ErisPulse-HelpModule/) is still maintained for backward compatibility. Both register `/help`, so enable only one.
+> 2.8.0+ recommends this module. The classic [`ErisPulse-HelpModule`](https://pypi.org/project/ErisPulse-HelpModule/) is still maintained for backward compatibility. Both register `/help`, so enable only one.
 
 ### Features
 
 - Day/night theme by local time (19–7 dark), or pin light / dark
 - Multilingual: zh-CN / zh-TW / en / ja / ru (declarative `I18nClass`)
+- Session-aware listing: commands from modules disabled by scope in the current session are hidden
 - Falls back to Html → Markdown → Text when images aren't supported
 - Declarative config (`ConfigClass`), descriptions also translated
 
@@ -63,7 +64,7 @@ header_subtitle = ""           # custom header subtitle (empty = default)
 
 ### Dependencies
 
-- ErisPulse SDK 2.7.0+
+- ErisPulse SDK 2.8.0+
 - [ErisPulse-Takumi](https://pypi.org/project/ErisPulse-Takumi/) (declared as a dependency, auto-installed)
 
 ---
@@ -72,12 +73,13 @@ header_subtitle = ""           # custom header subtitle (empty = default)
 
 ## 简体中文
 
-> 2.7.0+ 推荐使用本模块；经典版 [ErisPulse-HelpModule](https://pypi.org/project/ErisPulse-HelpModule/) 继续维护，用于向后兼容。两者都注册 `/help`，请按需启用其一。
+> 2.8.0+ 推荐使用本模块；经典版 [ErisPulse-HelpModule](https://pypi.org/project/ErisPulse-HelpModule/) 继续维护，用于向后兼容。两者都注册 `/help`，请按需启用其一。
 
 ### 功能特性
 
 - 按本地时间自动切换昼夜主题（19–7 点深色），也可固定为浅色 / 深色
 - 多语言：zh-CN / zh-TW / en / ja / ru（声明式 `I18nClass`）
+- 会话感知列表：被作用域禁用的模块，其命令不在当前会话的帮助中列出
 - 平台不支持图片时按 Html → Markdown → 文本 回退
 - 声明式配置（`ConfigClass`），配置描述同样支持多语言
 
@@ -121,5 +123,5 @@ header_subtitle = ""           # 自定义头部副标题（留空使用默认�
 
 ### 依赖
 
-- ErisPulse SDK 2.7.0+
+- ErisPulse SDK 2.8.0+
 - [ErisPulse-Takumi](https://pypi.org/project/ErisPulse-Takumi/)（已声明为依赖，自动安装）
