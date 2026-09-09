@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, ClassVar, Dict, List, Optional, Tuple
 
 from ErisPulse import sdk
 from ErisPulse.Core.Bases import BaseConfig, BaseI18n, BaseModule, I18nKey
@@ -7,6 +7,7 @@ from ErisPulse.Core.Event import command
 
 from .Templates import HelpTemplates
 from .Visualizer import Visualizer
+from .themes import theme_options
 
 class Main(BaseModule):
     """ErisPulse modern help module (Takumi-rendered, i18n-aware)."""
@@ -41,37 +42,47 @@ class Main(BaseModule):
                 },
             },
         )
+        style: str = field(
+            default="default",
+            metadata={
+                "description": {"i18n": "HelpNext.cfg_style", "default": "配色风格"},
+                "ui": {
+                    "widget": "select", "group": "render", "order": 4,
+                    "options": theme_options(),
+                },
+            },
+        )
         utc_offset: int = field(
             default=8,
             metadata={
                 "description": {"i18n": "HelpNext.cfg_utc_offset", "default": "UTC 时区偏移（用于昼夜切换）"},
                 "min": -12, "max": 14,
-                "ui": {"widget": "number", "group": "render", "order": 4},
+                "ui": {"widget": "number", "group": "render", "order": 5},
             },
         )
         show_logo: bool = field(
             default=True,
             metadata={
                 "description": {"i18n": "HelpNext.cfg_show_logo", "default": "头部显示 ErisPulse 图标"},
-                "ui": {"widget": "switch", "group": "header", "order": 5},
+                "ui": {"widget": "switch", "group": "header", "order": 6},
             },
         )
         header_title: str = field(
             default="",
             metadata={
                 "description": {"i18n": "HelpNext.cfg_header_title", "default": "自定义头部标题（留空使用默认）"},
-                "ui": {"widget": "text", "group": "header", "order": 6},
+                "ui": {"widget": "text", "group": "header", "order": 7},
             },
         )
         header_subtitle: str = field(
             default="",
             metadata={
                 "description": {"i18n": "HelpNext.cfg_header_subtitle", "default": "自定义头部副标题（留空使用默认）"},
-                "ui": {"widget": "text", "group": "header", "order": 7},
+                "ui": {"widget": "text", "group": "header", "order": 8},
             },
         )
 
-        _schema_meta = {
+        _schema_meta: ClassVar[dict] = {
             "group_labels": {
                 "basic": {"i18n": "HelpNext.group_basic", "default": "基本"},
                 "render": {"i18n": "HelpNext.group_render", "default": "渲染"},
@@ -115,6 +126,7 @@ class Main(BaseModule):
         cfg_header_subtitle: I18nKey = I18nKey(key="HelpNext.cfg_header_subtitle", default="Custom header subtitle (empty for default)", zh_CN="自定义头部副标题（留空使用默认）", zh_TW="自訂頭部副標題（留空使用預設）", en="Custom header subtitle (empty for default)", ja="カスタムヘッダーサブタイトル（空でデフォルト）", ru="Свой подзаголовок шапки (пусто = по умолчанию)")
 
         theme_auto: I18nKey = I18nKey(key="HelpNext.theme_auto", default="Auto (by time)", zh_CN="自动（跟随时间）", zh_TW="自動（跟隨時間）", en="Auto (by time)", ja="自動（時間帯）", ru="Авто (по времени)")
+        cfg_style: I18nKey = I18nKey(key="HelpNext.cfg_style", default="Color style", zh_CN="配色风格", zh_TW="配色風格", en="Color style", ja="カラースタイル", ru="Цветовой стиль")
         theme_light: I18nKey = I18nKey(key="HelpNext.theme_light", default="Light", zh_CN="浅色", zh_TW="淺色", en="Light", ja="ライト", ru="Светлая")
         theme_dark: I18nKey = I18nKey(key="HelpNext.theme_dark", default="Dark", zh_CN="深色", zh_TW="深色", en="Dark", ja="ダーク", ru="Тёмная")
         group_basic: I18nKey = I18nKey(key="HelpNext.group_basic", default="Basic", zh_CN="基本", zh_TW="基本", en="Basic", ja="基本", ru="Основные")
@@ -129,11 +141,44 @@ class Main(BaseModule):
         self._help_handler = None
 
     @staticmethod
+    def register_decorator(fn: Callable, priority: int = 0) -> None:
+        """注册渲染装饰器（供外部装饰插件调用）。
+
+        ``fn(ctx)`` 在每次卡片图渲染前收到上下文字典
+        ``{kind, body, css, theme, config}``，可就地修改 ``body``（HTML）
+        与 ``css``（样式表），实现主题美化、看板娘插图等装饰效果。
+
+        :param fn: 装饰函数，签名 ``fn(ctx: dict) -> None``
+        :param priority: 优先级，数值小的先执行
+        """
+        Visualizer.register_decorator(fn, priority)
+
+    @staticmethod
+    def unregister_decorator(fn: Callable) -> None:
+        """注销渲染装饰器。"""
+        Visualizer.unregister_decorator(fn)
+
+    @staticmethod
+    def clear_decorators() -> None:
+        """清空全部渲染装饰器。"""
+        Visualizer.clear_decorators()
+
+    @staticmethod
     def get_load_strategy():
         from ErisPulse.loaders import ModuleLoadStrategy
         return ModuleLoadStrategy(
-            lazy_load=False,
+            # 懒加载：/help 首次触发时激活（加载器自动注册占位命令 stub，
+            # 激活后注销 stub 并把当前命令转发给真实处理器）
+            lazy_load=True,
             priority=60,
+            activate_on={
+                "command": {
+                    "name": "help",
+                    "aliases": ["h", "帮助"],
+                    "help": "显示帮助信息",
+                    "usage": "help [序号] [--format <image|html|markdown|text>]",
+                }
+            },
         )
 
     async def on_load(self, event):
@@ -144,6 +189,11 @@ class Main(BaseModule):
             help="显示帮助信息",
             usage="help [序号] [--format <image|html|markdown|text>]",
         )(self._help_handler)
+        # 预挂载主题行为：萌图等资源在模块加载期即开始准备，首次 /help 即可用
+        try:
+            await self.visualizer._attach_behavior(self._cfg_view()["style"])
+        except Exception as e:
+            self.logger.warning(f"主题行为预挂载失败（将在渲染时重试）: {e}")
         self.logger.info("HelpNext 已加载")
 
     async def on_unload(self, event):
@@ -158,6 +208,7 @@ class Main(BaseModule):
             "show_hidden_commands": cfg.show_hidden_commands,
             "group_commands": cfg.group_commands,
             "theme": cfg.theme,
+            "style": cfg.style,
             "utc_offset": cfg.utc_offset,
             "show_logo": cfg.show_logo,
             "header_title": cfg.header_title,
@@ -218,17 +269,17 @@ class Main(BaseModule):
                 if index in self.command_map:
                     cmd = self.command_map[index]
                     if want_image:
-                        image = self.visualizer.render_command_detail(cmd, prefix, prefixes)
+                        image = await self.visualizer.render_command_detail(cmd, prefix, prefixes)
                     templates = HelpTemplates.build_command_detail(cmd, prefix, prefixes)
                 else:
                     title = HelpTemplates._t("err_out_of_range")
                     msg = HelpTemplates._t("err_range_hint", count=len(commands))
                     if want_image:
-                        image = self.visualizer.render_error(title, msg)
+                        image = await self.visualizer.render_error(title, msg)
                     templates = HelpTemplates.build_error(title, msg)
             else:
                 if want_image:
-                    image = self.visualizer.render_help_list(
+                    image = await self.visualizer.render_help_list(
                         commands, self.command_map, prefix, cfg["group_commands"], prefixes,
                     )
                 templates = HelpTemplates.build_help_list(

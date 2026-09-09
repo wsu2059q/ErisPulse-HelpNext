@@ -49,6 +49,7 @@ First load writes defaults; edit the `HelpNext` section:
 show_hidden_commands = false   # show commands marked hidden
 group_commands = true          # group commands by category
 theme = "auto"                 # auto | light | dark
+style = "default"              # default | moe
 utc_offset = 8                 # UTC offset for day/night switching
 show_logo = true               # show ErisPulse icon in header
 header_title = ""              # custom header title (empty = default)
@@ -58,9 +59,45 @@ header_subtitle = ""           # custom header subtitle (empty = default)
 - `show_hidden_commands`: when `true`, shows commands marked as hidden
 - `group_commands`: when `false`, lists all commands in a single group
 - `theme`: `auto` (by time), or fixed `light` / `dark`
+- `style`: color style — `default` or `moe`
 - `utc_offset`: UTC offset used for day/night detection
 - `show_logo`: show the ErisPulse icon in the header
 - `header_title` / `header_subtitle`: customize the header text (empty = defaults)
+
+### Styles
+
+- **default** — clean & professional (fallback)
+- **moe** — cute style, with a random mascot banner on top of help-list cards
+  (hidden automatically when the API is unreachable)
+
+Each style ships with light & dark palettes. Styles are standalone files
+in `HelpNext/themes/`: **the `moe` theme is fully removable** — delete
+`themes/moe.py` and unknown style names simply fall back to `default`.
+
+A style may define a `Theme` behavior class with
+`async on_attach(sdk)` / `async on_detach()` / `decorate(ctx, sdk)` to inject
+HTML/CSS per render — see `themes/moe.py` for a complete example.
+
+### Render Decorators (for plugin authors)
+
+Card rendering is also open to external decoration plugins. Register a decorator
+to receive the render context `{kind, body, css, theme, config}` before each card
+image is rendered, and mutate `body` (HTML) / `css` (stylesheet) in place
+(applied after the theme's own behavior):
+
+```python
+from HelpNext import Main
+
+def my_decorator(ctx):
+    ctx["css"] += "\n.card { border-radius: 24px; }"   # restyle
+    # ctx["body"] = ...                                 # inject decorations
+
+Main.register_decorator(my_decorator, priority=10)
+# Main.unregister_decorator(my_decorator) / Main.clear_decorators()
+```
+
+`kind` is `"help_list"` / `"command_detail"` / `"error"`; `theme` contains the
+resolved color tokens (`mode`, `page`, `card`, `ink`, ...).
 
 ### Dependencies
 
@@ -108,6 +145,7 @@ epsdk install HelpNext
 show_hidden_commands = false   # 是否显示隐藏命令
 group_commands = true          # 是否按分组显示
 theme = "auto"                 # auto | light | dark
+style = "default"              # default | moe
 utc_offset = 8                 # 昼夜切换用的时区偏移
 show_logo = true               # 头部是否显示 ErisPulse 图标
 header_title = ""              # 自定义头部标题（留空使用默认）
@@ -117,9 +155,42 @@ header_subtitle = ""           # 自定义头部副标题（留空使用默认�
 - `show_hidden_commands`：设为 `true` 时显示标记为隐藏的命令
 - `group_commands`：设为 `false` 时不分组，所有命令在同一列表
 - `theme`：图片主题，`auto` 跟随时间，或固定 `light` / `dark`
+- `style`：配色风格——`default` 或 `moe`
 - `utc_offset`：昼夜判定使用的 UTC 时区偏移
 - `show_logo`：头部是否显示 ErisPulse 图标
 - `header_title` / `header_subtitle`：自定义头部标题 / 副标题（留空使用默认）
+
+### 配色风格
+
+- **default** —— 简洁专业（兜底风格）
+- **moe** —— 可爱风，帮助列表顶部展示随机萌图横幅（API 不可用时自动隐藏）
+
+每套风格均含浅色 / 深色两组色板。风格是 `HelpNext/themes/` 下的独立文件：
+**`moe` 主题可整体剔除**——删除 `themes/moe.py` 即可，未知的风格名会自动
+回退到 `default`。
+
+风格可定义 `Theme` 行为类（`async on_attach(sdk)` / `async on_detach()` /
+`decorate(ctx, sdk)`）在渲染时注入 HTML / CSS，完整示例见 `themes/moe.py`。
+
+### 渲染装饰插件（供插件作者）
+
+卡片图渲染同样开放给外部装饰插件。注册装饰器即可在每次渲染前拿到上下文
+`{kind, body, css, theme, config}`，就地修改 `body`（HTML）/ `css`（样式表）
+（在主题自身行为之后执行）：
+
+```python
+from HelpNext import Main
+
+def my_decorator(ctx):
+    ctx["css"] += "\n.card { border-radius: 24px; }"   # 换样式
+    # ctx["body"] = ...                                 # 注入装饰内容
+
+Main.register_decorator(my_decorator, priority=10)
+# Main.unregister_decorator(my_decorator) / Main.clear_decorators()
+```
+
+`kind` 为 `"help_list"` / `"command_detail"` / `"error"`；`theme` 为解析后的
+色板令牌（`mode`、`page`、`card`、`ink` 等）。
 
 ### 依赖
 
