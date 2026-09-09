@@ -19,83 +19,82 @@ class Visualizer:
     _CARD_BORDER = 2
     _LOGO_W = 120
 
-    ACCENT = "#0071e3"
-    ACCENT_DARK = "#0a84ff"
-    WARN = "#ff9f0a"
-
-    PALETTE = [
-        "#0a84ff", "#5e5ce6", "#bf5af2", "#ff375f", "#ff9f0a",
-        "#34c759", "#64d2ff", "#30b0c7", "#ff453a", "#8e8e93",
-    ]
-
     _ICON_PATH = Path(__file__).parent / "assets" / "icon.png"
     _icon_cache: Optional[Tuple[str, Tuple[int, int]]] = None
+
+    _FONT_SANS = (
+        '"DM Sans", "Inter", "Helvetica Neue", Arial, "Noto Sans SC", '
+        '"Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
+    )
+    _FONT_MONO = '"JetBrains Mono", "Source Code Pro", Consolas, monospace'
 
     _CSS_TPL = """
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-        font-family: "Noto Sans SC", "Source Han Sans SC", sans-serif;
+        font-family: __FONTSANS__;
         background: __PAGE__; color: __INK__; -webkit-font-smoothing: antialiased;
         padding: 36px;
     }
     .card {
         background: __CARD__; border: 1px solid __BORDER__; border-radius: 16px;
-        padding: 16px 18px; box-shadow: __SHADOW__; margin-bottom: 12px;
+        padding: 16px 18px; margin-bottom: 12px;
     }
     .head-row { display: flex; align-items: center; gap: 14px; }
     .logo-side { display: block; }
     .head-text { min-width: 0; }
-    .title { font-size: 20px; font-weight: 700; color: __INK__; letter-spacing: -0.3px; }
-    .subtitle { font-size: 13px; color: __SUB__; margin-top: 2px; }
+    .title { font-size: 20px; font-weight: 700; color: __INK__; letter-spacing: -0.5px; }
+    .subtitle { font-size: 13px; color: __STEEL__; margin-top: 2px; }
     .divider { height: 1px; background: __SEP__; margin: 14px 0; }
     .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-    .chip { padding: 7px 14px; border-radius: 9px; font-size: 13px; background: __SOFT__; color: __INK__; border: 1px solid __BORDER__; }
-    .chip b { color: __ACCENT__; font-weight: 600; margin-right: 4px; }
+    .chip {
+        padding: 6px 14px; border-radius: 9999px; font-size: 13px;
+        background: __SOFT__; color: __STEEL__; border: 1px solid __BORDER__;
+    }
+    .chip b { color: __INK__; font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
     .masonry { display: flex; gap: 14px; align-items: flex-start; }
     .mcol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
     .mcol .card { margin-bottom: 0; }
     .cmd-head { display: flex; align-items: center; gap: 10px; }
     .num {
-        flex: 0 0 26px; width: 26px; height: 26px; border-radius: 8px;
-        background: __ACCENTBG__; border: 1px solid __ACCENTLINE__;
-        color: __ACCENT__; font-size: 12px; font-weight: 700;
+        flex: 0 0 auto; min-width: 26px; height: 26px; padding: 0 9px;
+        border-radius: 9999px; background: __NUMBG__; color: __NUMFG__;
+        font-size: 12px; font-weight: 700;
         display: flex; align-items: center; justify-content: center;
         font-variant-numeric: tabular-nums;
     }
     .cmd-code {
-        font-family: "Source Code Pro", monospace; font-size: 13.5px; font-weight: 700;
+        font-family: __FONTMONO__; font-size: 13.5px; font-weight: 700;
         color: __INK__; white-space: nowrap;
     }
-    .cmd-code .pfx { color: __ACCENT__; font-weight: 600; }
+    .cmd-code .pfx { color: __STEEL__; font-weight: 600; }
     .group-tag {
-        margin-left: auto; font-size: 11px; font-weight: 600;
-        padding: 3px 10px; border-radius: 6px; white-space: nowrap;
-        display: inline-flex; align-items: center; gap: 5px;
+        margin-left: auto; font-size: 11px; font-weight: 600; color: __STEEL__;
+        padding: 3px 10px; border-radius: 9999px; white-space: nowrap;
+        background: __SOFT__; border: 1px solid __BORDER__;
     }
-    .group-tag::before {
-        content: ""; width: 6px; height: 6px; border-radius: 50%;
-        background: currentColor; flex: 0 0 auto;
-    }
-    .cmd-desc { font-size: 13px; color: __INK__; margin-top: 8px; line-height: 1.55; }
+    .cmd-desc { font-size: 13px; color: __SLATE__; margin-top: 8px; line-height: 1.55; }
     .cmd-aliases { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-    .cmd-aliases .lbl { font-size: 11px; color: __SUB__; margin-right: 2px; }
+    .cmd-aliases .lbl { font-size: 11px; color: __STEEL__; margin-right: 2px; }
     .alias-tag {
-        font-family: "Source Code Pro", monospace; font-size: 12px;
-        background: __CODEBG__; color: __INK__; padding: 3px 9px; border-radius: 6px;
+        font-family: __FONTMONO__; font-size: 12px;
+        background: __SOFT__; color: __SLATE__; padding: 3px 9px; border-radius: 9999px;
     }
     .cmd-usage {
-        margin-top: 8px; font-family: "Source Code Pro", monospace; font-size: 12.5px;
-        background: __CODEBG__; color: __SUB__; padding: 7px 10px; border-radius: 7px;
+        margin-top: 8px; font-family: __FONTMONO__; font-size: 12.5px;
+        background: __CODEBG__; color: __SLATE__; padding: 7px 10px; border-radius: 8px;
         line-height: 1.5;
     }
-    .detail-label { font-size: 12px; font-weight: 600; color: __SUB__; letter-spacing: 0.6px; margin-bottom: 6px; text-transform: uppercase; }
+    .detail-label { font-size: 11px; font-weight: 600; color: __STEEL__; letter-spacing: 0.8px; margin-bottom: 6px; text-transform: uppercase; }
     .detail-value { font-size: 15px; color: __INK__; line-height: 1.5; }
-    .detail-value.mono { font-family: "Source Code Pro", monospace; background: __CODEBG__; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
-    .detail-value.warn { color: __WARN__; }
+    .detail-value.mono { font-family: __FONTMONO__; background: __CODEBG__; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+    .detail-value.warn { color: __ERR__; }
     .aliases { display: flex; flex-wrap: wrap; gap: 8px; }
-    .foot { font-size: 12.5px; color: __SUB__; text-align: center; margin-top: 14px; line-height: 1.7; }
-    .foot code { color: __ACCENT__; background: __CODEBG__; padding: 2px 7px; border-radius: 5px; font-family: "Source Code Pro", monospace; }
-    .err-title { font-size: 18px; font-weight: 700; color: __WARN__; }
+    .foot { font-size: 12.5px; color: __MUTED__; text-align: center; margin-top: 14px; line-height: 1.7; }
+    .foot code {
+        color: __SLATE__; background: __SOFT__; border: 1px solid __BORDER__;
+        padding: 1px 7px; border-radius: 9999px; font-family: __FONTMONO__;
+    }
+    .err-title { font-size: 18px; font-weight: 700; color: __ERR__; letter-spacing: -0.3px; }
     .err-msg { font-size: 14px; color: __INK__; margin-top: 8px; line-height: 1.5; }
     """
 
@@ -129,43 +128,38 @@ class Visualizer:
             offset = self.config.get("utc_offset", 8)
             hour = int((time.time() / 3600 + offset) % 24)
             mode = "dark" if (hour >= 19 or hour < 7) else "light"
-        accent = self.ACCENT_DARK if mode == "dark" else self.ACCENT
         if mode == "dark":
             return {
-                "page": "#000000", "card": "#1c1c1e", "ink": "#f5f5f7", "sub": "#8e8e93",
-                "sep": "#38383a", "soft": "#2c2c2e", "codebg": "rgba(255,255,255,0.08)",
-                "accent": accent, "tag_alpha": 0.22, "shadow": "none",
-                "border": "rgba(255,255,255,0.08)",
-                "accentline": self._rgba(accent, 0.35),
+                "page": "#0a0a0a", "card": "#181e25", "ink": "#ffffff",
+                "slate": "#a8aab2", "steel": "#8e8e93", "muted": "#7c8087",
+                "sep": "rgba(255,255,255,0.08)", "border": "rgba(255,255,255,0.10)",
+                "soft": "rgba(255,255,255,0.06)", "codebg": "rgba(255,255,255,0.06)",
+                "numbg": "#ffffff", "numfg": "#0a0a0a", "err": "#ff7a70",
             }
         return {
-            "page": "#f5f5f7", "card": "#ffffff", "ink": "#1d1d1f", "sub": "#6e6e73",
-            "sep": "#d2d2d7", "soft": "#f5f5f7", "codebg": "rgba(0,0,0,0.05)",
-            "accent": accent, "tag_alpha": 0.12, "shadow": "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04)",
-            "border": "rgba(0,0,0,0.06)",
-            "accentline": self._rgba(accent, 0.25),
+            "page": "#f7f8fa", "card": "#ffffff", "ink": "#0a0a0a",
+            "slate": "#45515e", "steel": "#8e8e93", "muted": "#a8aab2",
+            "sep": "#eaecf0", "border": "#e5e7eb",
+            "soft": "#f7f8fa", "codebg": "#f2f3f5",
+            "numbg": "#0a0a0a", "numfg": "#ffffff", "err": "#d45656",
         }
 
     def _css(self) -> Tuple[str, Dict]:
         t = self._theme()
         css = (
             self._CSS_TPL
+            .replace("__FONTSANS__", self._FONT_SANS)
+            .replace("__FONTMONO__", self._FONT_MONO)
             .replace("__PAGE__", t["page"]).replace("__CARD__", t["card"])
-            .replace("__INK__", t["ink"]).replace("__SUB__", t["sub"])
+            .replace("__INK__", t["ink"]).replace("__SLATE__", t["slate"])
+            .replace("__STEEL__", t["steel"]).replace("__MUTED__", t["muted"])
             .replace("__SEP__", t["sep"]).replace("__SOFT__", t["soft"])
-            .replace("__CODEBG__", t["codebg"]).replace("__ACCENT__", t["accent"])
-            .replace("__ACCENTBG__", self._rgba(t["accent"], t["tag_alpha"]))
-            .replace("__ACCENTLINE__", t["accentline"])
+            .replace("__CODEBG__", t["codebg"])
+            .replace("__NUMBG__", t["numbg"]).replace("__NUMFG__", t["numfg"])
+            .replace("__ERR__", t["err"])
             .replace("__BORDER__", t["border"])
-            .replace("__SHADOW__", t["shadow"])
         )
         return css, t
-
-    @staticmethod
-    def _rgba(hexcolor: str, alpha: float) -> str:
-        h = hexcolor.lstrip("#")
-        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-        return f"rgba({r},{g},{b},{alpha})"
 
     @staticmethod
     def _png_dims(data: bytes) -> Optional[Tuple[int, int]]:
@@ -288,9 +282,7 @@ class Visualizer:
         cmd: Dict,
         idx: int,
         prefix: str,
-        t: Dict,
         avail: int,
-        group_color: Optional[str] = None,
         show_group: bool = False,
     ) -> Tuple[str, int]:
         info = cmd["info"]
@@ -302,10 +294,9 @@ class Visualizer:
             f"<div class='cmd-code'><span class='pfx'>{self._esc(prefix)}</span>"
             f"{self._esc(name)}</div>"
         )
-        if show_group and info.get("group") and group_color:
+        if show_group and info.get("group"):
             gname = self._t("group_default") if info["group"] == "default" else info["group"]
-            bg = self._rgba(group_color, t["tag_alpha"])
-            head += f"<span class='group-tag' style='color:{group_color};background:{bg}'>{self._esc(gname)}</span>"
+            head += f"<span class='group-tag'>{self._esc(gname)}</span>"
         head += "</div>"
 
         desc_html = f"<div class='cmd-desc'>{self._esc(desc)}</div>"
@@ -368,16 +359,11 @@ class Visualizer:
             (self.CARD_WIDTH - self._PAGE_PAD * 2 - self._COL_GAP * (num_cols - 1))
             / num_cols - self._CARD_PAD_H * 2 - 2
         )
-        _, t = self._css()
 
         grouped: Dict[str, List[Dict]] = {}
         for cmd in commands:
             g = cmd["info"].get("group") or "default"
             grouped.setdefault(g, []).append(cmd)
-
-        group_colors: Dict[str, str] = {}
-        for g in grouped:
-            group_colors[g] = self.PALETTE[len(group_colors) % len(self.PALETTE)]
 
         ordered: List[Dict] = []
         for g, cmds in grouped.items():
@@ -391,11 +377,9 @@ class Visualizer:
 
         items = []
         for i, cmd in enumerate(ordered, start=1):
-            g = cmd["info"].get("group") or "default"
-            color = group_colors[g] if group_commands else None
             inner, inner_h = self._command_card(
-                cmd, i, prefix, t, avail,
-                group_color=color, show_group=group_commands,
+                cmd, i, prefix, avail,
+                show_group=group_commands,
             )
             items.append((self._card(inner), inner_h))
 
@@ -426,7 +410,8 @@ class Visualizer:
 
         chips = (
             f"<div class='chips'>"
-            f"<div class='chip'><code style='font-family:Source Code Pro,monospace;'>"
+            f"<div class='chip'><code style='font-family:{self._FONT_MONO};"
+            f"font-size:12.5px;font-weight:600;'>"
             f"{self._esc(prefix)}{self._esc(name)}</code></div></div>"
         )
         head_inner, head_h = self._header(self._t("detail_title"), chips)

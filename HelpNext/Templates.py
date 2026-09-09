@@ -6,10 +6,18 @@ from ErisPulse.Core.Event import command
 class HelpTemplates:
     """i18n-aware fallback templates (html / markdown / text)."""
 
-    PRIMARY_COLOR = "#0071e3"
-    WARNING_COLOR = "#ff9f0a"
-    ERROR_COLOR = "#ff453a"
-    PRIMARY_BG = "rgba(0, 113, 227, 0.06)"
+    INK = "#0a0a0a"
+    SLATE = "#45515e"
+    STEEL = "#8e8e93"
+    MUTED = "#a8aab2"
+    SOFT = "#f7f8fa"
+    BORDER = "#e5e7eb"
+    ERR = "#d45656"
+    FONT = (
+        "-apple-system,'Segoe UI',Roboto,'PingFang SC',"
+        "'Microsoft YaHei','Noto Sans SC',sans-serif"
+    )
+    MONO = "'JetBrains Mono','Source Code Pro',Consolas,monospace"
 
     @classmethod
     def _t(cls, key: str, **kwargs) -> str:
@@ -36,6 +44,14 @@ class HelpTemplates:
         if not prefixes or len(prefixes) <= 1:
             return []
         return [p for p in prefixes if p != display]
+
+    @classmethod
+    def _code_chip(cls, text: str) -> str:
+        return (
+            f"<code style=\"font-family:{cls.MONO};font-size:12px;"
+            f"background:{cls.SOFT};border:1px solid {cls.BORDER};"
+            f"padding:2px 7px;border-radius:4px;color:{cls.INK};\">{text}</code>"
+        )
 
     @classmethod
     def build_help_list(
@@ -80,8 +96,8 @@ class HelpTemplates:
         sections = ""
         for group, cmds in grouped.items():
             sections += (
-                f'<div style="font-size:13px;margin-bottom:8px;font-weight:600;'
-                f'color:{cls.PRIMARY_COLOR};">{cls._group_name(group)}</div>'
+                f'<div style="font-size:12px;font-weight:700;letter-spacing:0.5px;'
+                f'color:{cls.STEEL};margin:16px 0 8px;">{cls._group_name(group)}</div>'
             )
             for cmd in cmds:
                 idx = next(
@@ -90,23 +106,23 @@ class HelpTemplates:
                 name = cmd["name"]
                 help_text = cmd["info"].get("help") or cls._t("no_description")
                 sections += (
-                    f'<div style="margin-bottom:6px;font-size:13px;">'
-                    f'<b style="margin-right:6px;">{idx}.</b>'
-                    f'<code style="background:rgba(0,0,0,0.05);padding:2px 6px;'
-                    f'border-radius:4px;margin-right:6px;">{prefix}{name}</code>'
-                    f'<span style="color:#666;">- {help_text}</span></div>'
+                    f'<div style="margin-bottom:8px;font-size:13px;line-height:1.5;">'
+                    f'<span style="color:{cls.STEEL};font-weight:600;margin-right:8px;'
+                    f'font-variant-numeric:tabular-nums;">{idx}</span>'
+                    f'{cls._code_chip(prefix + name)}'
+                    f'<span style="color:{cls.SLATE};margin-left:8px;">{help_text}</span></div>'
                 )
-            sections += "\n"
 
         others_html = cls._prefix_note_html(others)
         return (
-            f'<div style="padding:12px;border-radius:8px;">'
-            f'<div style="color:{cls.PRIMARY_COLOR};font-size:16px;font-weight:700;'
+            f'<div style="font-family:{cls.FONT};color:{cls.INK};padding:4px 2px;">'
+            f'<div style="font-size:16px;font-weight:700;letter-spacing:-0.3px;'
             f'margin-bottom:12px;">{title}</div>'
-            f'<div style="padding:8px;background:{cls.PRIMARY_BG};border-radius:6px;'
-            f'margin-bottom:12px;font-size:13px;">{hint}</div>'
+            f'<div style="padding:8px 12px;background:{cls.SOFT};'
+            f'border:1px solid {cls.BORDER};border-radius:8px;margin-bottom:4px;'
+            f'font-size:13px;color:{cls.SLATE};">{hint}</div>'
             f'{sections}'
-            f'<div style="font-size:12px;color:#666;margin-top:8px;">{count}</div>'
+            f'<div style="font-size:12px;color:{cls.STEEL};margin-top:14px;">{count}</div>'
             f'{others_html}'
             f'</div>'
         )
@@ -163,9 +179,9 @@ class HelpTemplates:
     def _prefix_note_html(cls, others) -> str:
         if not others:
             return ""
-        note = "、".join(f"<code style='font-size:11px;'>{p}</code>" for p in others)
+        note = "、".join(f"<code style='font-family:{cls.MONO};font-size:11px;'>{p}</code>" for p in others)
         return (
-            f'<div style="font-size:11px;color:#999;margin-top:4px;">'
+            f'<div style="font-size:11px;color:{cls.MUTED};margin-top:6px;">'
             f'{cls._t("other_prefixes")}: {note}</div>'
         )
 
@@ -184,10 +200,9 @@ class HelpTemplates:
         info = cmd["info"]
         title = cls._t("detail_title")
         parts = [
-            f'<div style="padding:12px;border-radius:8px;">'
-            f'<div style="color:{cls.PRIMARY_COLOR};font-size:16px;font-weight:700;'
-            f'margin-bottom:12px;">{title}: <code style="background:rgba(0,0,0,0.05);'
-            f'padding:2px 6px;border-radius:4px;">{prefix}{name}</code></div>'
+            f'<div style="font-family:{cls.FONT};color:{cls.INK};padding:4px 2px;">'
+            f'<div style="font-size:16px;font-weight:700;letter-spacing:-0.3px;'
+            f'margin-bottom:14px;">{title} {cls._code_chip(prefix + name)}</div>'
         ]
 
         parts.append(cls._kv_html(cls._t("label_description"),
@@ -218,12 +233,17 @@ class HelpTemplates:
 
     @classmethod
     def _kv_html(cls, label: str, value: str, mono: bool = False, warn: bool = False) -> str:
-        color = cls.WARNING_COLOR if warn else "inherit"
-        style = "font-family:monospace;background:rgba(0,0,0,0.03);padding:2px 6px;border-radius:4px;" if mono else ""
+        color = cls.ERR if warn else cls.INK
+        style = (
+            f"font-family:{cls.MONO};background:{cls.SOFT};"
+            f"border:1px solid {cls.BORDER};padding:6px 10px;border-radius:6px;"
+            if mono else ""
+        )
         return (
-            f'<div style="margin-bottom:8px;">'
-            f'<div style="font-size:13px;margin-bottom:4px;"><b>{label}:</b></div>'
-            f'<div style="font-size:13px;color:{color};{style}">{value}</div></div>'
+            f'<div style="margin-bottom:10px;">'
+            f'<div style="font-size:11px;font-weight:600;letter-spacing:0.5px;'
+            f'text-transform:uppercase;color:{cls.STEEL};margin-bottom:4px;">{label}</div>'
+            f'<div style="font-size:13px;line-height:1.5;color:{color};{style}">{value}</div></div>'
         )
 
     @classmethod
@@ -283,10 +303,11 @@ class HelpTemplates:
     @classmethod
     def build_error(cls, title: str, message: str) -> Dict[str, str]:
         html = (
-            f'<div style="padding:12px;border-radius:8px;">'
-            f'<div style="color:{cls.ERROR_COLOR};font-size:14px;font-weight:700;'
-            f'margin-bottom:8px;">{title}</div>'
-            f'<div style="font-size:13px;">{message}</div></div>'
+            f'<div style="font-family:{cls.FONT};padding:4px 2px;">'
+            f'<div style="font-size:14px;font-weight:700;letter-spacing:-0.2px;'
+            f'color:{cls.ERR};margin-bottom:8px;">{title}</div>'
+            f'<div style="font-size:13px;line-height:1.5;color:{cls.SLATE};">'
+            f'{message}</div></div>'
         )
         markdown = f"**{title}**\n\n{message}"
         text = f"{title}\n\n{message}"

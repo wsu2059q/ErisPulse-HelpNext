@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ErisPulse-HelpNext"
-version = "0.1.0"
+version = "0.1.1"
 description = "Modern help command module, session-aware listing & full i18n (requires ErisPulse 2.8.0+) | 现代化帮助命令模块，会话感知列表与完整多语言（需 ErisPulse 2.8.0+）"
 readme = "README.md"
 requires-python = ">=3.10"
